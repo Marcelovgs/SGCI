@@ -17,7 +17,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity
 public class SecurityConfigurations {
-    // Lembrete: Classe única para configurar toda a segurança da API.
 
     @Autowired
     private SecurityFilter securityFilter;
@@ -25,18 +24,24 @@ public class SecurityConfigurations {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                // 1. Desabilito o CSRF, pois a API é stateless e usa tokens.
                 .csrf(csrf -> csrf.disable())
-                // 2. Configuro a sessão como stateless.
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                // 3. Configuro as regras de autorização para cada endpoint.
                 .authorizeHttpRequests(req -> {
+                    // Rotas públicas
                     req.requestMatchers(HttpMethod.POST, "/auth/login").permitAll();
                     req.requestMatchers(HttpMethod.POST, "/auth/registrar").permitAll();
-                    // Todas as outras requisições exigem autenticação.
+
+                    // Regra para criar chamados (já funciona)
+                    req.requestMatchers(HttpMethod.POST, "/chamados").hasRole("SOLICITANTE");
+
+                    // >> NOVA REGRA ADICIONADA <<
+                    // Permite que QUALQUER usuário AUTENTICADO tente visualizar um chamado pelo ID.
+                    // A lógica de "ele só pode ver o que é dele" será feita no Passo 2.
+                    req.requestMatchers(HttpMethod.GET, "/chamados/{id}").authenticated();
+
+                    // Qualquer outra requisição precisa de autenticação.
                     req.anyRequest().authenticated();
                 })
-                // 4. Adiciono meu filtro de JWT para rodar antes do filtro padrão do Spring.
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
@@ -48,7 +53,6 @@ public class SecurityConfigurations {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        // Lembrete: Usar BCrypt é a prática padrão e segura para armazenar senhas.
         return new BCryptPasswordEncoder();
     }
 }

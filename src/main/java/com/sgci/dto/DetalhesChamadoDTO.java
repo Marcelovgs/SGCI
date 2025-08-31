@@ -2,32 +2,31 @@ package com.sgci.dto;
 
 import com.sgci.enums.Prioridade;
 import com.sgci.enums.StatusChamado;
-import com.sgci.model.Chamado; // Importe a sua entidade Chamado
+import com.sgci.model.Chamado;
 
 import java.time.LocalDateTime;
 
-// Este DTO é o "rosto" do chamado
+// DTO pra devolver uma visão segura e formatada de um chamado para o frontend.
 public record DetalhesChamadoDTO(
         Long id,
         String titulo,
-        String descricao,         // <-- CAMPO ADICIONADO
+        String descricao,
         StatusChamado status,
         Prioridade prioridade,
         LocalDateTime dataAbertura,
-        String nomeSolicitante,   // <-- CAMPO ADICIONADO
+        String nomeSolicitante,
         String tagEquipamento
 ) {
-    // Lembrete para mim mesmo: Este construtor é uma "fábrica" que transforma a
-    // entidade completa (com senhas e dados sensíveis) em um DTO seguro para o frontend.
+    // Construtor que "traduz" a entidade para este DTO. Facilita muito lol.
     public DetalhesChamadoDTO(Chamado chamado) {
         this(
                 chamado.getId(),
                 chamado.getTitulo(),
-                chamado.getDescricao(), // Mapeando a descrição completa
+                chamado.getDescricao(),
                 chamado.getStatus(),
                 chamado.getPrioridade(),
                 chamado.getDataAbertura(),
-                chamado.getSolicitante().getNome(), // Mapeando o nome de quem abriu
+                chamado.getSolicitante().getNome(),
                 chamado.getEquipamento().getTag()
         );
     }

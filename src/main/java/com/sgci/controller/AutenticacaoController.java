@@ -1,40 +1,68 @@
 package com.sgci.controller;
 
 import com.sgci.dto.LoginDTO;
+import com.sgci.dto.RegistrarUsuarioDTO;
 import com.sgci.dto.TokenDTO;
+import com.sgci.enums.Role;
 import com.sgci.model.Usuario;
+import com.sgci.repository.UsuarioRepository;
 import com.sgci.security.TokenService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping
+@RequestMapping("/auth")
 public class AutenticacaoController {
-    // Controller só pra login e registro.
 
+    // ADICIONAR ESTAS DUAS INJEÇÕES QUE ESTAVAM FALTANDO:
     @Autowired
-    private AuthenticationManager manager;
+    private AuthenticationManager authenticationManager;
 
     @Autowired
     private TokenService tokenService;
 
-    // TODO: Criar DTO de registro e um UsuarioService pra lógica de criação.
-    // @Autowired private UsuarioService usuarioService;
+    // Você já deve ter estas:
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @PostMapping("/login")
     public ResponseEntity efetuarLogin(@RequestBody @Valid LoginDTO dados) {
-        var authenticationToken = new UsernamePasswordAuthenticationToken(dados.email(), dados.password());
-        var authentication = manager.authenticate(authenticationToken);
+        try {
+            var authenticationToken = new UsernamePasswordAuthenticationToken(dados.email(), dados.password());
+            var authentication = authenticationManager.authenticate(authenticationToken);
+            var tokenJWT = tokenService.gerarToken((Usuario) authentication.getPrincipal());
 
-        var tokenJWT = tokenService.gerarToken((Usuario) authentication.getPrincipal());
+            return ResponseEntity.ok(new TokenDTO(tokenJWT));
+        } catch (AuthenticationException e) {
+            return ResponseEntity.badRequest().body("Falha na autenticação: email ou senha inválidos.");
+        }
+    }
 
-        return ResponseEntity.ok(new TokenDTO(tokenJWT));
+    @PostMapping("/registrar")
+    @Transactional
+    @ResponseStatus(HttpStatus.CREATED)
+    public void registrar(@RequestBody @Valid RegistrarUsuarioDTO dados) {
+        if (usuarioRepository.findByEmail(dados.email()).isPresent()) {
+            throw new RuntimeException("Email já cadastrado!");
+        }
+
+        var novoUsuario = new Usuario();
+        novoUsuario.setNome(dados.nome());
+        novoUsuario.setEmail(dados.email());
+        novoUsuario.setPassword(passwordEncoder.encode(dados.password()));
+        novoUsuario.setRole(Role.ROLE_SOLICITANTE);
+
+        usuarioRepository.save(novoUsuario);
     }
 }

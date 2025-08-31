@@ -17,7 +17,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity
 public class SecurityConfigurations {
-    // Onde configuro as regras de acesso da API.
+    // Lembrete: Classe única para configurar toda a segurança da API.
 
     @Autowired
     private SecurityFilter securityFilter;
@@ -25,23 +25,18 @@ public class SecurityConfigurations {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                .csrf(csrf -> csrf.disable()) // Desabilito CSRF porque a API é stateless.
-                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Sessão stateless.
+                // 1. Desabilito o CSRF, pois a API é stateless e usa tokens.
+                .csrf(csrf -> csrf.disable())
+                // 2. Configuro a sessão como stateless.
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // 3. Configuro as regras de autorização para cada endpoint.
                 .authorizeHttpRequests(req -> {
-                    // Rotas públicas: login e registro.
-                    req.requestMatchers(HttpMethod.POST, "/login").permitAll();
-                    req.requestMatchers(HttpMethod.POST, "/usuarios/registrar").permitAll();
-
-                    // Rotas de Chamados: apenas para usuários autenticados.
-                    // Adicionar mais regras específicas depois (ex: só técnico pode alterar status).
-                    req.requestMatchers("/chamados/**").authenticated();
-
-                    // Rotas de Equipamentos: talvez só admin possa mexer.
-                    req.requestMatchers("/equipamentos/**").hasRole("ADMIN");
-
-                    // O resto precisa de autenticação.
+                    req.requestMatchers(HttpMethod.POST, "/auth/login").permitAll();
+                    req.requestMatchers(HttpMethod.POST, "/auth/registrar").permitAll();
+                    // Todas as outras requisições exigem autenticação.
                     req.anyRequest().authenticated();
                 })
+                // 4. Adiciono meu filtro de JWT para rodar antes do filtro padrão do Spring.
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
@@ -53,7 +48,7 @@ public class SecurityConfigurations {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        // Usar BCrypt pra criptografar as senhas.
+        // Lembrete: Usar BCrypt é a prática padrão e segura para armazenar senhas.
         return new BCryptPasswordEncoder();
     }
 }

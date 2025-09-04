@@ -24,22 +24,13 @@ public class SecurityConfigurations {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
+
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(req -> {
-                    // Rotas públicas
+                    // Garanta que as rotas de login e registro são públicas
                     req.requestMatchers(HttpMethod.POST, "/auth/login").permitAll();
                     req.requestMatchers(HttpMethod.POST, "/auth/registrar").permitAll();
-
-                    // Regra para criar chamados (já funciona)
-                    req.requestMatchers(HttpMethod.POST, "/chamados").hasRole("SOLICITANTE");
-
-                    // >> NOVA REGRA ADICIONADA <<
-                    // Permite que QUALQUER usuário AUTENTICADO tente visualizar um chamado pelo ID.
-                    // A lógica de "ele só pode ver o que é dele" será feita no Passo 2.
-                    req.requestMatchers(HttpMethod.GET, "/chamados/{id}").authenticated();
-
-                    // Qualquer outra requisição precisa de autenticação.
                     req.anyRequest().authenticated();
                 })
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)

@@ -3,7 +3,6 @@ package com.sgci.dto;
 import com.sgci.enums.Prioridade;
 import com.sgci.enums.StatusChamado;
 import com.sgci.model.Chamado;
-
 import java.time.LocalDateTime;
 
 // DTO pra devolver uma visão segura e formatada de um chamado para o frontend.
@@ -17,7 +16,7 @@ public record DetalhesChamadoDTO(
         String nomeSolicitante,
         String tagEquipamento
 ) {
-    // Construtor que "traduz" a entidade para este DTO. Facilita muito lol.
+    // Construtor que "traduz" a entidade para este DTO. Isso resolve o erro do '::new'.
     public DetalhesChamadoDTO(Chamado chamado) {
         this(
                 chamado.getId(),

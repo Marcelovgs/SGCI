@@ -10,6 +10,8 @@ import com.sgci.repository.ChamadoRepository;
 import com.sgci.repository.EquipamentoRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,7 +45,7 @@ public class ChamadosService {
         return chamadoRepository.save(novoChamado);
     }
 
-    // Lógica da busca por tag que fizemos antes.
+    // Lógica da busca por tag que fiz antes.
     @Transactional(readOnly = true)
     public Optional<DetalhesChamadoDTO> buscarChamadoAbertoPorTag(String tag) {
         var equipamentoOptional = equipamentoRepository.findByTag(tag);
@@ -57,23 +59,30 @@ public class ChamadosService {
         return chamadoOptional.map(DetalhesChamadoDTO::new);
     }
 
-    // ========================================================================
-    // >> MÉTODO NOVO ADICIONADO AQUI <<
-    // ========================================================================
+    // Lógica para detalhar um chamado específico.
     @Transactional(readOnly = true)
     public DetalhesChamadoDTO detalharChamado(Long id, Usuario usuarioLogado) {
-        // Lembrete: Primeiro, busco o chamado. Se não existir, o orElseThrow já retorna um 404 (com o TratadorDeErros).
         var chamado = chamadoRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Chamado não encontrado"));
 
-        // Lembrete: Esta é a regra de negócio de segurança.
-        // Se quem está logado for um SOLICITANTE, preciso checar se ele é o dono do chamado.
         if (usuarioLogado.getRole() == Role.ROLE_SOLICITANTE && !chamado.getSolicitante().equals(usuarioLogado)) {
-            // Se não for o dono, lanço uma exceção de acesso negado. O TratadorDeErros vai transformar isso em 403.
             throw new AccessDeniedException("Acesso negado: Este chamado não pertence a você.");
         }
 
-        // Se o usuário for o dono (ou for TECNICO/ADMIN), a verificação passa e eu retorno o DTO.
         return new DetalhesChamadoDTO(chamado);
+    }
+
+    // Lógica da listagem "inteligente".
+    @Transactional(readOnly = true)
+    public Page<DetalhesChamadoDTO> listarChamados(Usuario usuarioLogado, Pageable paginacao) {
+        if (usuarioLogado.getRole() == Role.ROLE_SOLICITANTE) {
+            // Se for SOLICITANTE, busca só os dele.
+            return chamadoRepository.findBySolicitante(usuarioLogado, paginacao)
+                    .map(DetalhesChamadoDTO::new);
+        }
+
+        // Se for TECNICO ou ADMIN, pode ver tudo.
+        return chamadoRepository.findAll(paginacao)
+                .map(DetalhesChamadoDTO::new);
     }
 }

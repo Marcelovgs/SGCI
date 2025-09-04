@@ -1,6 +1,8 @@
 package com.sgci.controller;
+import com.sgci.dto.AdicionarAtualizacaoDTO;
 import com.sgci.dto.CriarChamadoDTO;
 import com.sgci.dto.DetalhesChamadoDTO;
+import com.sgci.dto.FecharChamadoDTO;
 import com.sgci.model.Usuario;
 import com.sgci.service.ChamadosService;
 import jakarta.validation.Valid;
@@ -42,10 +44,10 @@ public class ChamadoController {
     public ResponseEntity<Page<DetalhesChamadoDTO>> listarChamados(
             @AuthenticationPrincipal Usuario usuarioLogado,
             // Lembrete: @PageableDefault define um padrão se o frontend não mandar nada.
-            // Aqui, o padrão é 10 itens por página, ordenados pela data de abertura.
+            //padrão é 10 itens por página, ordenados pela data de abertura.
             @PageableDefault(size = 10, sort = {"dataAbertura"}) Pageable paginacao) {
 
-        // Lembrete: A lógica de verdade fica no service, o controller só repassa e devolve o OK.
+        // A lógica de verdade fica no service, o controller só repassa e devolve o OK.
         var paginaDeChamados = chamadosService.listarChamados(usuarioLogado, paginacao);
         return ResponseEntity.ok(paginaDeChamados);
     }
@@ -58,5 +60,26 @@ public class ChamadoController {
             return ResponseEntity.ok(chamadoDTO.get());
         }
         return ResponseEntity.noContent().build();
+    }
+    @PutMapping("/{id}/atribuir")
+    @Transactional
+    public ResponseEntity<DetalhesChamadoDTO> atribuirChamado(@PathVariable Long id, @AuthenticationPrincipal Usuario tecnicoLogado) {
+        // O controller só orquestra, a lógica pesada fica no service.
+        var dto = chamadosService.atribuirChamado(id, tecnicoLogado);
+        return ResponseEntity.ok(dto);
+    }
+
+    @PostMapping("/{id}/atualizacoes")
+    @Transactional
+    public ResponseEntity<DetalhesChamadoDTO> adicionarAtualizacao(@PathVariable Long id, @RequestBody @Valid AdicionarAtualizacaoDTO dados, @AuthenticationPrincipal Usuario autor) {
+        var dto = chamadosService.adicionarAtualizacao(id, dados, autor);
+        return ResponseEntity.ok(dto);
+    }
+
+    @PutMapping("/{id}/fechar")
+    @Transactional
+    public ResponseEntity<DetalhesChamadoDTO> fecharChamado(@PathVariable Long id, @RequestBody @Valid FecharChamadoDTO dados, @AuthenticationPrincipal Usuario tecnicoLogado) {
+        var dto = chamadosService.fecharChamado(id, dados, tecnicoLogado);
+        return ResponseEntity.ok(dto);
     }
 }

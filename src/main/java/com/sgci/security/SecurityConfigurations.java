@@ -1,4 +1,8 @@
 package com.sgci.security;
+
+// Lembrete: Adicionar o import estático para o withDefaults.
+import static org.springframework.security.config.Customizer.withDefaults;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,15 +12,15 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity // Lembrete: Habilitei a segurança por método pra usar o @PreAuthorize.
+@EnableMethodSecurity
 public class SecurityConfigurations {
 
     @Autowired
@@ -26,25 +30,21 @@ public class SecurityConfigurations {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(csrf -> csrf.disable())
-                .sessionManagement(sm -> sm.sessionCreationPolicy(STATELESS))
-                .authorizeHttpRequests(req -> {
-                    // Lembrete: As regras de URL ficam aqui. As de método ficam nos controllers.
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
+                // >> CORREÇÃO CRÍTICA ADICIONADA AQUI <<
+                // Lembrete: Esta linha ativa a configuração de CORS que criei no CorsConfig.java.
+                // Sem isso, o Spring Security bloqueia as requisições antes que o CORS seja aplicado.
+                .cors(withDefaults())
+
+                .authorizeHttpRequests(req -> {
                     // Rotas Públicas
                     req.requestMatchers(HttpMethod.POST, "/auth/login").permitAll();
                     req.requestMatchers(HttpMethod.POST, "/auth/registrar").permitAll();
 
-                    // Regras para Chamados
-                    req.requestMatchers(HttpMethod.POST, "/chamados").hasRole("SOLICITANTE");
-                    req.requestMatchers(HttpMethod.PUT, "/chamados/{id}/atribuir").hasRole("TECNICO");
-                    req.requestMatchers(HttpMethod.POST, "/chamados/{id}/atualizacoes").hasAnyRole("TECNICO", "ADMIN");
-                    req.requestMatchers(HttpMethod.PUT, "/chamados/{id}/fechar").hasAnyRole("TECNICO", "ADMIN");
-
-                    // A regra para /equipamentos/** foi removida daqui, pois já está protegida pelo @PreAuthorize no controller.
-
-                    // Qualquer outra requisição que não foi especificada acima precisa de autenticação.
+                    // Qualquer outra requisição precisa de autenticação.
+                    // As regras mais específicas de Role estão nos controllers com @PreAuthorize.
                     req.anyRequest().authenticated();
-
                 })
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

@@ -14,11 +14,11 @@ function NewTicketPage() {
 
     useEffect(() => {
         const fetchEquipamentos = async () => {
-            // Lembrete: Se o usuário não estiver autenticado, não faz sentido buscar.
+            // : Se o usuário não estiver autenticado, não faz sentido buscar.
             if (!isAuthenticated) return;
 
             try {
-                // Lembrete: Não preciso mais mandar o token manualmente, o AuthContext cuida disso.
+                // : Não preciso mais mandar o token manualmente, o AuthContext cuida disso.
                 const response = await axios.get('http://localhost:8080/equipamentos');
                 setEquipamentos(response.data);
                 if (response.data.length > 0) {

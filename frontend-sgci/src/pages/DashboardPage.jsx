@@ -10,30 +10,58 @@ function DashboardPage() {
     const [chamados, setChamados] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchChamados = async () => {
-            try {
-                const response = await axios.get('http://localhost:8080/chamados');
-                setChamados(response.data.content);
-            } catch (error) {
-                console.error("Erro ao buscar chamados:", error);
-                if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-                    logout();
-                    navigate('/login');
-                }
-            } finally {
-                setLoading(false);
-            }
-        };
 
-        if (user) {
-            fetchChamados();
+    // >> Logica de paginação <<
+
+    // : Estado para guardar as infos da paginação que vêm do backend.
+    const [paginaInfo, setPaginaInfo] = useState(null);
+    // : Estado para controlar em qual página estamos. Começa na página 0.
+    const [paginaAtual, setPaginaAtual] = useState(0);
+
+    // : A função de busca agora pede uma página específica.
+    const fetchChamados = async (paginaNumero) => {
+        setLoading(true);
+        try {
+            // A URL agora inclui o parâmetro '?page=' para pedir a página correta.
+            const response = await axios.get(`http://localhost:8080/chamados?page=${paginaNumero}&size=10&sort=dataAbertura,desc`);
+
+            setChamados(response.data.content); // A lista de chamados da página.
+            setPaginaInfo(response.data); // O objeto completo com infos de paginação.
+        } catch (error) {
+            console.error("Erro ao buscar chamados:", error);
+            if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+                logout();
+                navigate('/login');
+            }
+        } finally {
+            setLoading(false);
         }
-    }, [user]);
+    };
+
+    // : O useEffect agora depende da 'paginaAtual'.
+    // Toda vez que a 'paginaAtual' mudar (ao clicar nos botões), ele vai buscar os dados de novo.
+    useEffect(() => {
+        if (user) {
+            fetchChamados(paginaAtual);
+        }
+    }, [user, paginaAtual]);
 
     const handleLogout = () => {
         logout();
         navigate('/login');
+    };
+
+    // : Funções para navegar entre as páginas.
+    const handlePaginaAnterior = () => {
+        if (paginaInfo && !paginaInfo.first) {
+            setPaginaAtual(paginaAtual - 1);
+        }
+    };
+
+    const handleProximaPagina = () => {
+        if (paginaInfo && !paginaInfo.last) {
+            setPaginaAtual(paginaAtual + 1);
+        }
     };
 
     const isSolicitante = user?.role === 'ROLE_SOLICITANTE';
@@ -63,14 +91,12 @@ function DashboardPage() {
                                 {isSolicitante ? 'Meus Chamados Recentes' : 'Fila de Chamados em Aberto'}
                             </h2>
 
-                            {/* Lembrete: Lógica para mostrar o botão certo para cada papel. */}
                             {isSolicitante && (
                                 <Link to="/chamados/novo" className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
                                     Criar Novo Chamado
                                 </Link>
                             )}
 
-                            {/* >> BOTÃO NOVO ADICIONADO PARA O ADMIN << */}
                             {user?.role === 'ROLE_ADMIN' && (
                                 <Link to="/equipamentos" className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg">
                                     Gerenciar Equipamentos
@@ -79,20 +105,47 @@ function DashboardPage() {
                         </div>
 
                         {chamados.length > 0 ? (
-                            <ul className="divide-y divide-slate-700">
-                                {chamados.map(chamado => (
-                                    <Link key={chamado.id} to={`/chamados/${chamado.id}`}>
-                                        <li className="py-4 px-2 flex justify-between items-center hover:bg-slate-700 rounded-md transition-colors">
-                                            <div>
-                                                <p className="font-bold text-lg">{chamado.titulo}</p>
-                                                {!isSolicitante && <p className="text-xs text-slate-400">Aberto por: {chamado.nomeSolicitante}</p>}
-                                                <p className="text-sm text-slate-300 mt-1">{chamado.descricao.substring(0, 100)}...</p>
-                                            </div>
-                                            <span className="bg-blue-500 text-xs font-semibold px-2.5 py-1 rounded-full">{chamado.status}</span>
-                                        </li>
-                                    </Link>
-                                ))}
-                            </ul>
+                            <>
+                                <ul className="divide-y divide-slate-700">
+                                    {chamados.map(chamado => (
+                                        <Link key={chamado.id} to={`/chamados/${chamado.id}`}>
+                                            <li className="py-4 px-2 flex justify-between items-center hover:bg-slate-700 rounded-md transition-colors">
+                                                <div>
+                                                    <p className="font-bold text-lg">{chamado.titulo}</p>
+                                                    {!isSolicitante && <p className="text-xs text-slate-400">Aberto por: {chamado.nomeSolicitante}</p>}
+                                                    <p className="text-sm text-slate-300 mt-1">{chamado.descricao.substring(0, 100)}...</p>
+                                                </div>
+                                                <span className="bg-blue-500 text-xs font-semibold px-2.5 py-1 rounded-full">{chamado.status}</span>
+                                            </li>
+                                        </Link>
+                                    ))}
+                                </ul>
+
+
+                                {/* >> controles de paginação << */}
+
+                                {paginaInfo && paginaInfo.totalPages > 1 && (
+                                    <div className="flex justify-between items-center mt-6 pt-4 border-t border-slate-700">
+                                        <button
+                                            onClick={handlePaginaAnterior}
+                                            disabled={paginaInfo.first}
+                                            className="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Anterior
+                                        </button>
+                                        <span className="text-slate-400">
+                                            Página {paginaInfo.number + 1} de {paginaInfo.totalPages}
+                                        </span>
+                                        <button
+                                            onClick={handleProximaPagina}
+                                            disabled={paginaInfo.last}
+                                            className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Próxima
+                                        </button>
+                                    </div>
+                                )}
+                            </>
                         ) : (
                             <p className="text-center text-slate-400">{isSolicitante ? 'Você ainda não abriu nenhum chamado.' : 'Não há chamados na fila.'}</p>
                         )}

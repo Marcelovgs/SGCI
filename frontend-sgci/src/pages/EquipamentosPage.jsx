@@ -15,7 +15,7 @@ function EquipamentosPage() {
 
     // Função para buscar equipamentos com token
     const fetchEquipamentos = async () => {
-        if (!user) return; // não faz nada se usuário não estiver definido
+        if (!user) return;
         try {
             const token = localStorage.getItem('authToken');
             const response = await axios.get('http://localhost:8080/equipamentos', {
@@ -122,6 +122,15 @@ function EquipamentosPage() {
         }
     };
 
+    // Funções de rolagem
+    const scrollToTop = () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const scrollToBottom = () => {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    };
+
     return (
         <div className="bg-slate-900 text-white min-h-screen p-8">
             <nav className="mb-8">
@@ -159,6 +168,26 @@ function EquipamentosPage() {
                         ))}
                     </ul>
                 </div>
+            </div>
+
+            {/* Botões flutuantes */}
+            <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-50">
+
+                <button
+                    onClick={scrollToTop}
+                    className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-full shadow-lg transition-transform hover:scale-105"
+                    title="Voltar ao topo"
+                >
+                    ↑
+                </button>
+
+                <button
+                    onClick={scrollToBottom}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full shadow-lg transition-transform hover:scale-105"
+                    title="Descer até o fim"
+                >
+                    ↓
+                </button>
             </div>
 
             {/* Modal de Edição */}

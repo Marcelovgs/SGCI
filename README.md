@@ -1,5 +1,7 @@
-SGCI - Sistema de Gerenciamento de Chamados Industriais
 <p align="center"> <img src="https://img.shields.io/badge/Java-17-blue?logo=java" alt="Java 17"> <img src="https://img.shields.io/badge/Spring_Boot-3.x-green?logo=spring" alt="Spring Boot"> <img src="https://img.shields.io/badge/React-19-blue?logo=react" alt="React 19"> <img src="https://img.shields.io/badge/PostgreSQL-15-blue?logo=postgresql" alt="PostgreSQL"> <img src="https://img.shields.io/badge/Status-Concluído-brightgreen" alt="Status Concluído"> </p>
+
+
+# SGCI - Sistema de Gerenciamento de Chamados Industriais
 
 📖 Sobre o Projeto
 O SGCI é uma aplicação full-stack que simula um sistema de gerenciamento de chamados de manutenção para ambientes industriais. A plataforma permite que diferentes tipos de usuários (Solicitantes, Técnicos e Admins) interajam com o sistema para abrir, gerenciar e resolver ordens de serviço, com foco em equipamentos como câmeras de segurança.

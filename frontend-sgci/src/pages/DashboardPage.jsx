@@ -13,12 +13,12 @@ function DashboardPage() {
 
     // >> Logica de paginação <<
 
-    // : Estado para guardar as infos da paginação que vêm do backend.
+    //  Estado para guardar as infos da paginação que vêm do backend.
     const [paginaInfo, setPaginaInfo] = useState(null);
-    // : Estado para controlar em qual página estamos. Começa na página 0.
+    //  Estado para controlar em qual página estamos. Começa na página 0.
     const [paginaAtual, setPaginaAtual] = useState(0);
 
-    // : A função de busca agora pede uma página específica.
+    //  A função de busca agora pede uma página específica.
     const fetchChamados = async (paginaNumero) => {
         setLoading(true);
         try {

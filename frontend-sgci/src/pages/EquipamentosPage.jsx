@@ -77,7 +77,7 @@ function EquipamentosPage() {
         } catch (error) {
             console.error("Erro ao excluir equipamento", error);
             if (error.response && error.response.status === 403) {
-                alert("Erro: você precisa ser ADMIN para excluir este equipamento.");
+                alert("Não foi possivel excluir, a camera tem um chamado em aberto.");
             } else {
                 alert("Erro ao excluir equipamento. Tente novamente.");
             }
